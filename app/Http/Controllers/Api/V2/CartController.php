@@ -340,16 +340,14 @@ class CartController extends Controller
             return response()->json(['result' => false, 'message' => translate('Cart item not found')], 404);
         }
         
-        // Get the user_id or temp_user_id from the cart item to be removed
+        
         $user_id = $removedCartItem->user_id ?? $removedCartItem->temp_user_id;
         
-        // Store the shipping cost of the item being removed
+        
         $removedShippingCost = $removedCartItem->shipping_cost;
         
-        // Remove the cart item
-        Cart::destroy($id);
         
-        // Get remaining cart items for the user
+        
         $remainingCartItems = Cart::where(function($query) use ($user_id) {
             $query->where('user_id', $user_id)
                   ->orWhere('temp_user_id', $user_id);
@@ -366,6 +364,10 @@ class CartController extends Controller
                 $cartItem->save();
             }
         }
+
+        
+        // Remove the cart item
+        Cart::destroy($id);
         
         return response()->json(['result' => true, 'message' => translate('Product is successfully removed from your cart')], 200);
     }
