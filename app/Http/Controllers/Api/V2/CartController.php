@@ -334,7 +334,39 @@ class CartController extends Controller
 
     public function destroy($id)
     {
+        $removedCartItem = Cart::find($id);
+        
+        if (!$removedCartItem) {
+            return response()->json(['result' => false, 'message' => translate('Cart item not found')], 404);
+        }
+        
+        // Get the user_id or temp_user_id from the cart item to be removed
+        $user_id = $removedCartItem->user_id ?? $removedCartItem->temp_user_id;
+        
+        // Store the shipping cost of the item being removed
+        $removedShippingCost = $removedCartItem->shipping_cost;
+        
+        // Remove the cart item
         Cart::destroy($id);
+        
+        // Get remaining cart items for the user
+        $remainingCartItems = Cart::where(function($query) use ($user_id) {
+            $query->where('user_id', $user_id)
+                  ->orWhere('temp_user_id', $user_id);
+        })->get();
+        
+        // If there are remaining items and the removed item had shipping cost, redistribute it
+        if ($remainingCartItems->count() > 0 && $removedShippingCost > 0) {
+            // Calculate additional shipping cost per remaining item
+            $additionalShippingCostPerItem = $removedShippingCost / $remainingCartItems->count();
+            
+            // Add the additional shipping cost to each remaining item
+            foreach ($remainingCartItems as $cartItem) {
+                $cartItem->shipping_cost += $additionalShippingCostPerItem;
+                $cartItem->save();
+            }
+        }
+        
         return response()->json(['result' => true, 'message' => translate('Product is successfully removed from your cart')], 200);
     }
 }
