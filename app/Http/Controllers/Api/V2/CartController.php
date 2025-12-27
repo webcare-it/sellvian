@@ -346,7 +346,8 @@ class CartController extends Controller
         
         $removedShippingCost = $removedCartItem->shipping_cost;
         
-        
+        // Remove the cart item
+        Cart::destroy($id);
         
         $remainingCartItems = Cart::where(function($query) use ($user_id) {
             $query->where('user_id', $user_id)
@@ -365,9 +366,6 @@ class CartController extends Controller
             }
         }
 
-        
-        // Remove the cart item
-        Cart::destroy($id);
         
         return response()->json(['result' => true, 'message' => translate('Product is successfully removed from your cart')], 200);
     }
